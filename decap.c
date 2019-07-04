@@ -24,8 +24,9 @@
 
 /*******************************************************************************************************************
 ********************************************************************************************************************/
+// FILES
 
-//Fun��es Ranking
+//Struct ranking
 struct rankingUsuario {
 	char name[4];
 	int pontos;
@@ -33,126 +34,56 @@ struct rankingUsuario {
 
 typedef struct rankingUsuario rgp;
 
-void organizaRanking(rgp* arm);
-void atualizaRanking(char* nick, int score);
+rgp* shazam(char name[], int score) {
+	FILE* fp;
+	rgp* a;
+	a = (rgp*)malloc(10 * sizeof(rgp));
+	int i, x;
 
-void  arqRanking(char* nick, int* score) {
-	FILE* arq;
-	int cont = 0;
+	if ((fp = fopen("data.txt", "r")) != NULL) {
+		i = 0;
+		while (!feof(fp)) {
 
-	if (cont <= 10) {
-		arq = fopen("contador.txt", "r");
-		if (arq == NULL) {
-			arq = fopen("contador.txt", "w+");
-			fprintf(arq, "%d", cont);
+			fscanf(fp, "%s %d\n", &a[i].name, &a[i].pontos);
+			i++;
 		}
-		else {
-			fscanf(arq, "%d", &cont);
-		}
-		fclose(arq);
-	}
-	if (cont <= 10) {
+		for (i = 9; i > 0; i--) {
+			if (a != NULL) {
+				if (a[i - 1].pontos < score) {
+					a[i].pontos = a[i - 1].pontos;
+					strncpy(a[i].name, a[i - 1].name, 3);
+					if (i == 1) {
+						strcpy(a[0].name, name);
+						a[0].pontos = score;
+					}
 
-		arq = fopen("contador.txt", "w+");
-		cont = cont + 1;
-		fprintf(arq, "%d", cont);
-		fclose(arq);
-
-		arq = fopen("Ranking.txt", "a+");
-		fprintf(arq, "%s;%d\n", nick, *score);
-		fclose(arq);
-
-	}
-	else
-		atualizaRanking(nick, *score);
-}
-
-void atualizaRanking(char* nick, int score) {
-	FILE* arq;
-	rgp arm[10];
-	int i, tamanho, cont;
-
-	arq = fopen("contador.txt", "r");
-	fscanf(arq, "%d", &cont);
-	fclose(arq);
-
-	tamanho = cont;
-	arq = fopen("Ranking.txt", "r+");
-	for (i = 0; i < tamanho; i++) {
-		//Lê o meu arquivo até o vigezimo jogador
-		fscanf(arq, "%s;%d", arm[i].name, &arm[i].pontos);
-	}
-	fclose(arq);
-	strcpy(arm[cont+1].name, nick);
-	// arm[10].pontos = /*score*/
-
-	 //Chama a minha função para organizar meu ranking com os 21 jogadores, 
-	organizaRanking(arm);
-	// grava no arquivo os 10 melhores colocados
-	arq = fopen("Ranking.txt", "w+");
-	for (i = 0; i < tamanho; i++) {
-		fprintf(arq, "%s;%d", arm[i].name, arm[i].pontos);
-	}
-	fclose(arq);
-
-}
-
-void   organizaRanking(rgp* ord) {
-	int i, cont;
-	int trocou, pAux;
-	char nAux[4];
-	int tamanho;
-
-	FILE* arq;
-
-	arq = fopen("contador.txt", "r");
-	fscanf(arq, "%d", &cont);
-	fclose(arq);
-
-	tamanho = cont;
-
-	//analisar essa ordenação.
-	do {
-		trocou = 0;
-		for (i = tamanho; i >= 0; i--) {
-			if (ord[i].pontos > ord[i - 1].pontos) {
-				pAux = ord[i].pontos;
-				strcpy(nAux, ord[i].name);
-				ord[i].pontos = ord[i - 1].pontos;
-				strcpy(ord[i].name, ord[i - 1].name);
-				ord[i - 1].pontos = pAux;
-				strcpy(ord[i - 1].name, nAux);
-				trocou = 1;
+				}
+				else if (a[i - 1].pontos >= score && a[i].pontos < score) {
+					a[i].pontos = score;
+					strcpy(a[i].name, name);
+				}
 			}
-
 		}
-	} while (trocou);
-}
-//apresentar para o us�ario o Ranking
-rgp* leRanking() {
-	int i, cont;
-	FILE* arq;
-	rgp rnk[10];
-	int tamanho;
 
-	arq = fopen("contador.txt", "r");
-	fscanf(arq, "%d", &cont);
-	fclose(arq);
-
-	tamanho = cont;
-
-	arq = fopen("Ranking.txt", "r+");
-	for (i = 0; i < tamanho; i++) {
-		//Lê o arquivo até o vigezimo jogador
-		fscanf(arq, "%s#####%d", rnk[i].name, &rnk[i].pontos);
+		fclose(fp);
+		fp = fopen("data.txt", "w");
+		for (i = 0; i < 10; i++) {
+			fprintf(fp, "%s %d\n", a[i].name, a[i].pontos);
+		}
+		fclose(fp);
 	}
-	fclose(arq);
-	/*//adaptar
-	for(i=0; i< tamanho; i++){
-	printf("Name: %s #### %d Points.",rnk[i].name,rnk[i].pontos);
-	}*/
-
-	return  rnk;
+	else {
+		fp = fopen("data.txt", "w");
+		fprintf(fp, "%s %d\n", name, score);
+		for (i = 0; i < 9; i++) {
+			fprintf(fp, "NON 0\n");
+		}
+		fclose(fp);
+	}
+	for (i = 0; i < 10; i++) {
+		printf("%d---------%s %d\n", i + 1, a[i].name, a[i].pontos);
+	}
+	return a;
 }
 
 /*******************************************************************************************************************
@@ -184,14 +115,10 @@ ALLEGRO_AUDIO_STREAM* create_audio_stream(char* str) {
 typedef struct {
 	float vel, posx, posy;
 	int current_collumn, current_line, cont_frames, sheety, sheetx;
-} mc;
+} character;
 
-typedef struct {
-	float vel, posx, posy;
-	int current_collumn, current_line, cont_frames, sheety, sheetx;
-} enemy;
-
-void init_char(mc* main_char) {
+// MC initializer
+void init_char(character* main_char) {
 	main_char->vel = 0.5;
 	main_char->posx = 1024/2-32;
 	main_char->posy = 576 / 2 - 32;
@@ -202,24 +129,25 @@ void init_char(mc* main_char) {
 	main_char->sheety = main_char->current_line * CHAR_SIZE;
 }
 
-void draw_main_sprite(mc* main_char, ALLEGRO_BITMAP* spritesheet, ALLEGRO_EVENT event_obj) {
-	int frames = 400;
+// Draw animation
+void draw_sprite(int posx, int posy, int* char_frames, int* collumn, int* line, int*sheetx, int* sheety, double delta, ALLEGRO_BITMAP* spritesheet, ALLEGRO_EVENT event_obj) {
+	int frames = 100;
 
 	if (event_obj.type == ALLEGRO_EVENT_TIMER) {
-		main_char->cont_frames++;
+		*char_frames = *char_frames+1;
 
-		if (main_char->cont_frames >= frames) {
-			main_char->cont_frames = 0;
-			main_char->current_collumn++;
-			if (main_char->current_collumn >= SHEET_COLLUMNS) {
-				main_char->current_collumn = 0;
-				main_char->sheety = main_char->current_line * CHAR_SIZE;
+		if (*char_frames >= frames * delta) {
+			*char_frames = 0;
+			*collumn = *collumn+1;
+			if (*collumn >= SHEET_COLLUMNS) {
+				*collumn = 0;
+				*sheety = *line * CHAR_SIZE;
 			}
-			main_char->sheetx = main_char->current_collumn * CHAR_SIZE;
+			*sheetx = *collumn * CHAR_SIZE;
 		}
 	}
 
-	al_draw_bitmap_region(spritesheet, main_char->sheetx, main_char->sheety, CHAR_SIZE, CHAR_SIZE, main_char->posx, main_char->posy, 0);
+	al_draw_bitmap_region(spritesheet, *sheetx, *sheety, CHAR_SIZE, CHAR_SIZE, posx, posy, 0);
 }
 
 // Draw screen when no screen was called
@@ -321,14 +249,14 @@ void draw_menu(int* current_scr, int* select, ALLEGRO_FONT* font, int has_event,
 }
 
 // Draw game screen
-void draw_game(mc* main_char, int* current_scr, int* select, char* nick, int* score, ALLEGRO_FONT* font, ALLEGRO_BITMAP* spritesheet, int has_event, ALLEGRO_EVENT_QUEUE* event_queue, ALLEGRO_BITMAP* bg, ALLEGRO_EVENT event_obj) {
+void draw_game(character* main_char, int* current_scr, int* select, double delta, char* nick, ALLEGRO_FONT* font, ALLEGRO_BITMAP* spritesheet, int has_event, ALLEGRO_EVENT_QUEUE* event_queue, ALLEGRO_BITMAP* bg, ALLEGRO_EVENT event_obj) {
 	if (event_obj.type == ALLEGRO_EVENT_KEY_DOWN)
 		switch (event_obj.keyboard.keycode) {
 		case ALLEGRO_KEY_W:
 			*select = 1;
 			break;
 		case ALLEGRO_KEY_A:
-			*(select+1) = 1;
+			*(select + 1) = 1;
 			break;
 		case ALLEGRO_KEY_S:
 			*select = 2;
@@ -346,12 +274,12 @@ void draw_game(mc* main_char, int* current_scr, int* select, char* nick, int* sc
 	else if (event_obj.type == ALLEGRO_EVENT_KEY_UP)
 		switch (event_obj.keyboard.keycode) {
 		case ALLEGRO_KEY_W:
-			if(*select == 1)
-				*select = 0;
+			if (*select == 1)
+				* select = 0;
 			break;
 		case ALLEGRO_KEY_A:
-			if(*(select + 1) == 1)
-				*(select + 1) = 0;
+			if (*(select + 1) == 1)
+				* (select + 1) = 0;
 			break;
 		case ALLEGRO_KEY_S:
 			if (select[0] == 2)
@@ -359,29 +287,29 @@ void draw_game(mc* main_char, int* current_scr, int* select, char* nick, int* sc
 			break;
 		case ALLEGRO_KEY_D:
 			if (*(select + 1) == 2)
-				*(select + 1) = 0;
+				* (select + 1) = 0;
 			break;
 		default:
 			break;
 		}
 
-	if (event_obj.type == ALLEGRO_EVENT_TIMER) {
-		if (*select == 1 && (main_char->posy - main_char->vel) > 25)
-			main_char->posy = main_char->posy - main_char->vel;
-		if (*(select + 1) == 1 && (main_char->posx + main_char->vel) > 25)
-			main_char->posx = main_char->posx - main_char->vel;
-		if (*select == 2 && (main_char->posy + main_char->vel) < 576 - 125)
-			main_char->posy = main_char->posy + main_char->vel;
-		if (*(select + 1) == 2 && (main_char->posx + main_char->vel) < 1024 - 125)
-			main_char->posx = main_char->posx + main_char->vel;
-	}
+
+	if (*select == 1 && (main_char->posy - main_char->vel / delta) > 25)
+		main_char->posy = main_char->posy - main_char->vel / delta;
+	if (*(select + 1) == 1 && (main_char->posx + main_char->vel / delta) > 25)
+		main_char->posx = main_char->posx - main_char->vel / delta;
+	if (*select == 2 && (main_char->posy + main_char->vel / delta) < 576 - 125)
+		main_char->posy = main_char->posy + main_char->vel / delta;
+	if (*(select + 1) == 2 && (main_char->posx + main_char->vel / delta) < 1024 - 125)
+		main_char->posx = main_char->posx + main_char->vel / delta;
+
 
 	if (*select > 0 || *(select + 1) > 0)
 		main_char->current_line = 1;
 	else
 		main_char->current_line = 3;
 
-	draw_main_sprite(main_char, spritesheet, event_obj);
+	draw_sprite(main_char->posx, main_char->posy, &main_char->cont_frames, &main_char->current_collumn, &main_char->current_line, &main_char->sheetx, &main_char->sheety, delta, spritesheet, event_obj);
 }
 
 // Draw game options screen
@@ -453,20 +381,23 @@ void draw_briefing(int* current_scr, int* select, ALLEGRO_DISPLAY* window, ALLEG
 	al_draw_text(font, al_map_rgb(255 - selected, 255 - selected, 255 - selected), 20, 300 + 50 * 4, ALLEGRO_ALIGN_LEFT, "Voltar");
 }
 
-// Draw high scores
-void draw_hiscore(int* current_scr, int* select, ALLEGRO_FONT* font, ALLEGRO_FONT* small_font, int has_event, ALLEGRO_EVENT_QUEUE* event_queue, ALLEGRO_EVENT event_obj) {
+// Draw highs
+void draw_hiscore(char name[], int scores, int* current_scr, int* select, ALLEGRO_FONT* font, ALLEGRO_FONT* small_font, int has_event, ALLEGRO_EVENT_QUEUE* event_queue, ALLEGRO_EVENT event_obj) {
 	int selected = 0;
 	int i;
 
-	rgp* score = leRanking();
+	rgp* score;
+	score = shazam(name, scores);
 
-	al_draw_text(font, al_map_rgb(255 - selected, 255 - selected, 255 - selected), 1024/2-50, 30, ALLEGRO_ALIGN_LEFT, "TOP 10");
-	for (i = 0; i < 10; i++) {
-		printf("%d - %s\n", i, score[i].name);
-		if (strlen(score[i].name) == 4) {
-			al_draw_textf(small_font, al_map_rgb(255 - selected, 255 - selected, 255 - selected), 576 / 2, 30 + 40 * i+1, ALLEGRO_ALIGN_LEFT, "%s - %i", score[i].name, score[i].pontos);
-		}
-	}
+
+
+	al_draw_text(font, al_map_rgb(255 - selected, 255 - selected, 255 - selected), 1024 / 2 - 75, 40, ALLEGRO_ALIGN_LEFT, "HIGH SCORES");
+
+	for (i = 0; i < 10; i++)
+		if (strlen(score[i].name) == 3)
+			al_draw_textf(small_font, al_map_rgb(255 - selected, 255 - selected, 255 - selected), (1024 / 2) - 40, 90 + 40 * i, ALLEGRO_ALIGN_LEFT, "%s - %i", score[i].name, score[i].pontos);
+
+
 
 	if (event_obj.type == ALLEGRO_EVENT_MOUSE_AXES) {
 		if (event_obj.mouse.x < 350) {
@@ -490,6 +421,7 @@ void draw_hiscore(int* current_scr, int* select, ALLEGRO_FONT* font, ALLEGRO_FON
 	al_draw_text(font, al_map_rgb(255 - selected, 255 - selected, 255 - selected), 20, 300 + 50 * 4, ALLEGRO_ALIGN_LEFT, "Voltar");
 }
 
+// Draw name asking
 void draw_name(int* current_scr, int* select, char* nick, ALLEGRO_FONT* font, int has_event, ALLEGRO_EVENT_QUEUE* event_queue, ALLEGRO_EVENT event_obj) {
 	al_draw_text(font, al_map_rgb(0, 0, 0), 512-200, 300 - 160, ALLEGRO_ALIGN_LEFT, "Digite um nick (3 letras)");
 	al_draw_textf(font, al_map_rgb(0, 0, 0), 512 - 30, 576/2-16, ALLEGRO_ALIGN_LEFT, "%s", nick);
@@ -650,7 +582,7 @@ void draw_name(int* current_scr, int* select, char* nick, ALLEGRO_FONT* font, in
 }
 
 // Draw current screen (game, menu, etc)
-void draw_scr(mc* main_char, int* current_scr, int* select, char* nick, int* score, ALLEGRO_BITMAP* spritesheet, ALLEGRO_DISPLAY* window, ALLEGRO_FONT* font, ALLEGRO_FONT* small_font, int has_event, ALLEGRO_EVENT_QUEUE* event_queue, ALLEGRO_EVENT event_obj, ALLEGRO_BITMAP* bg, int* close_window) {
+void draw_scr(int  score, character* main_char, int* current_scr, int* select, char* nick, double delta, ALLEGRO_BITMAP* spritesheet, ALLEGRO_DISPLAY* window, ALLEGRO_FONT* font, ALLEGRO_FONT* small_font, int has_event, ALLEGRO_EVENT_QUEUE* event_queue, ALLEGRO_EVENT event_obj, ALLEGRO_BITMAP* bg, int* close_window) {
 	/*
 	 *  0 - Menu
 	 *  1 - Jogo
@@ -664,7 +596,7 @@ void draw_scr(mc* main_char, int* current_scr, int* select, char* nick, int* sco
 		draw_menu(current_scr, select, font, has_event, event_queue, event_obj, close_window);
 		break;
 	case 1:
-		draw_game(main_char, current_scr, select, nick, score, font, spritesheet, has_event, event_queue, bg, event_obj);
+		draw_game(main_char, current_scr, select, delta, nick, font, spritesheet, has_event, event_queue, bg, event_obj);
 		break;
 	case 2:
 		draw_options(current_scr, select, font, has_event, event_queue, event_obj);
@@ -673,7 +605,7 @@ void draw_scr(mc* main_char, int* current_scr, int* select, char* nick, int* sco
 		draw_briefing(current_scr, select, window, font, small_font, has_event, event_queue, event_obj);
 		break;
 	case 4:
-		draw_hiscore(current_scr, select, font, small_font, has_event, event_queue, event_obj);
+		draw_hiscore(nick, score, current_scr, select, font, small_font, has_event, event_queue, event_obj);
 		break;
 	case 5:
 		draw_name(current_scr, select, nick, font, has_event, event_queue, event_obj);
@@ -697,8 +629,11 @@ int main(void) {
 
 	// Variables
 	int current_scr = 0, old_scr = current_scr, close_window = 0, select[2] = { 20,20 };
-	char nick[4];
-	int score[1] = { 0 };
+	char nick[5];
+	int i, score = 10;
+	rgp* scores = shazam("NON", 0);
+	for (i = 0; i < 5; i++)
+		nick[i] = '\0';
 	
 	/* Initialize allegro */
 	if (!al_init()) {
@@ -739,7 +674,9 @@ int main(void) {
 		fprintf(stderr, "Failed to initialize mouse support.\n");
 		exit(1);
 	}
-	if (!al_set_system_mouse_cursor(window, ALLEGRO_SYSTEM_MOUSE_CURSOR_DEFAULT)) {
+	ALLEGRO_BITMAP* cursor_bmp = create_bitmap("img/cursor.png");
+	ALLEGRO_MOUSE_CURSOR* cursor = al_create_mouse_cursor(cursor_bmp, 0, 0);
+	if (!al_set_mouse_cursor(window, cursor)) {
 		al_destroy_display(window);
 		fprintf(stderr, "Failed to initialize mouse cursor.\n");
 		exit(1);
@@ -806,8 +743,10 @@ int main(void) {
 	ALLEGRO_BITMAP* bg = create_bitmap("bg/main_menu.png");
 	ALLEGRO_BITMAP* spritesheet = create_bitmap("char/spritesheet.png");
 
-	// Create MC
-	mc main_char;
+	double old_time = al_get_time();
+
+	// Create character
+	character main_char;
 	init_char(&main_char);
 
 	/* Game loop */
@@ -818,6 +757,11 @@ int main(void) {
 		// Close window if close button is pressed
 		if (event_obj.type == ALLEGRO_EVENT_DISPLAY_CLOSE && has_event)
 			close_window = 1;
+
+		double new_time = al_get_time();
+		double delta = new_time - old_time;
+		double fps = 1 / (delta * 1000);
+		old_time = new_time;
 
 		// Load when screen is changed once
 		if (current_scr != old_scr) {
@@ -841,12 +785,13 @@ int main(void) {
 				bg = create_bitmap("bg/option.png");
 			}
 			else if (current_scr == 4) {
-				if (old_scr == 1) {
+				//if (old_scr == 1) {
+					scores = shazam(nick, score + 1);
 					*nick = '\0';
 					*(nick + 1) = '\0';
 					*(nick + 2) = '\0';
-					arqRanking(nick, score);
-				}
+					//arqRanking(score);
+				//}
 				bg = create_bitmap("bg/main_menu.png");
 			}
 			old_scr = current_scr;
@@ -855,11 +800,12 @@ int main(void) {
 		// Update display
 		al_clear_to_color(al_map_rgb(0, 0, 0));
 		al_draw_bitmap(bg, 0, 0, 0);
-		draw_scr(&main_char, &current_scr, select, nick, score, spritesheet, window, font, small_font, has_event, event_queue, event_obj, bg, &close_window);
+		draw_scr(score, &main_char, &current_scr, select, nick, fps, spritesheet, window, font, small_font, has_event, event_queue, event_obj, bg, &close_window);
 		al_flip_display();
 	}
 
 	// Close program
+	al_destroy_bitmap(cursor_bmp);
 	al_destroy_bitmap(spritesheet);
 	al_destroy_bitmap(bg);
 	al_destroy_audio_stream(bgm);
