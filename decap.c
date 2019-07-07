@@ -710,7 +710,6 @@ void draw_game(int* score,int* wave,double time,m* mnst,b* blts,character* main_
         init_char(main_char);
         *current_scr=4;
     }
-
 }
 
 // Draw game options screen
@@ -794,8 +793,6 @@ void draw_hiscore(char name[], int scores, int* current_scr, int* select, ALLEGR
 
 	rgp* score;
 	score = add_score(name, scores);
-
-
 
 	al_draw_text(font, al_map_rgb(255 - selected, 255 - selected, 255 - selected), 1024 / 2 - 75, 40, ALLEGRO_ALIGN_LEFT, "HIGH SCORES");
 
