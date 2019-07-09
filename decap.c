@@ -164,7 +164,7 @@ typedef struct {
 	int current_collumn, current_line, cont_frames, sheety, sheetx;
 } character;
 
-// MC initializer
+//initializer
 void init_m( m * blts) {
     int k;
     for(k=0;k<50;k++){
@@ -309,7 +309,7 @@ void move_blts(b*blts,double delta){
 }
 
 void move_m(m*blts,double delta,double timer,float mx,float my){
-    int k=0,cont=0;
+    int k=0;
     for(k=0;k<50;k++){
         if (blts[k].enable==1){
             if(blts[k].posx>50&&blts[k].posx<924&&blts[k].posy>50&&blts[k].posy<400){
@@ -345,15 +345,13 @@ void move_m(m*blts,double delta,double timer,float mx,float my){
 }
 
 int died(m* mnst, character* mc){
-    int i,k=0,j,l;
+    int i,k=0;
     for(i=0;i<50;i++){
         if(mnst[i].enable==1){
-            for(j=0;j<2;j++)
-                for(l=0;l<2;l++)
-                    if(mnst[i].posx+66*j>=mc->posx+26&&mnst[i].posx+66*j<=mc->posx+96-26&&mnst[i].posy+96*l>=mc->posy&&mnst[i].posy+96*l<=mc->posy+96){
-                        k=1;
-                        i=50;
-                    }
+            if(abs(mnst[i].posy-mc->posy)<96&&abs(mnst[i].posx-(mc->posx))<78){
+                k=1;
+                i=50;
+            }
         }
     }
     return k;
@@ -629,9 +627,8 @@ void draw_menu(int* play_button, int* current_scr, int* select, ALLEGRO_FONT* fo
 void draw_score(int* current_scr, int* score, char* nick, int* select, ALLEGRO_FONT* font, ALLEGRO_EVENT event_obj) {
 	int selected[2] = { 0,0 };
 	int i;
-	
+
 	al_draw_text(font, al_map_rgb(255, 255, 255), 1024/2-100, 576/2/2, ALLEGRO_ALIGN_LEFT, "Seu Score");
-	printf("%s %d\n", nick, *score);
 	al_draw_textf(font, al_map_rgb(255, 255, 255), 1024 / 2 * 0.75, 576/2-10, ALLEGRO_ALIGN_LEFT, "%s%10d", nick, *score);
 
 	if (event_obj.type == ALLEGRO_EVENT_MOUSE_AXES) {
@@ -666,7 +663,7 @@ void draw_score(int* current_scr, int* score, char* nick, int* select, ALLEGRO_F
 
 // Draw game screen
 void draw_game(int* has_sound, int* score, int* wave, double time, m* mnst, b* blts, character* main_char, int* current_scr, int* select, double delta, char* nick, ALLEGRO_FONT* font, ALLEGRO_BITMAP* spritesheet, ALLEGRO_BITMAP* bullet, int has_event, ALLEGRO_EVENT_QUEUE* event_queue, ALLEGRO_BITMAP* bg, ALLEGRO_SAMPLE* shot_sound, ALLEGRO_EVENT event_obj) {
-	int troca = 1, cont = 0, killed = 0;
+	int  cont = 0;
 
 	switch (read_keyboard_down(event_obj)) {
 	case 'W':
@@ -709,11 +706,11 @@ void draw_game(int* has_sound, int* score, int* wave, double time, m* mnst, b* b
 
 	if (*select == 1 && (main_char->posy - main_char->vel / delta) > 25)
 		main_char->posy = main_char->posy - main_char->vel / delta;
-	if (*(select + 1) == 1 && (main_char->posx + main_char->vel / delta) > 20)
+	if (*(select + 1) == 1 && (main_char->posx + main_char->vel / delta) > 25)
 		main_char->posx = main_char->posx - main_char->vel / delta;
 	if (*select == 2 && (main_char->posy + main_char->vel / delta) < 576 - 125)
 		main_char->posy = main_char->posy + main_char->vel / delta;
-	if (*(select + 1) == 2 && (main_char->posx + main_char->vel / delta) < 1024 - 105)
+	if (*(select + 1) == 2 && (main_char->posx + main_char->vel / delta) < 1024 - 125)
 		main_char->posx = main_char->posx + main_char->vel / delta;
 
 	if (event_obj.type == ALLEGRO_EVENT_MOUSE_BUTTON_DOWN) {
@@ -727,13 +724,15 @@ void draw_game(int* has_sound, int* score, int* wave, double time, m* mnst, b* b
 			spawn_blts(blts, event_obj.mouse.x, event_obj.mouse.y, main_char->posx + 86, main_char->posy);
 		}
 	}
-	else if (main_char->current_line != 3) {
-		if (*select > 0 || *(select + 1) > 0)
-			main_char->current_line = 1;
-		else
-			main_char->current_line = 3;
+	else{
+        if((main_char->current_collumn)==3){
+            if (*select > 0 || *(select + 1) > 0)
+                main_char->current_line = 1;
+            else
+                main_char->current_line = 3;
+            main_char->sheety = 96 * main_char->current_line;
+        }
 
-		main_char->sheety = 96 * main_char->current_line;
 	}
 
     int i;
@@ -853,7 +852,7 @@ void draw_briefing(int* play_button, int* current_scr, int* select, ALLEGRO_DISP
 
 	if (event_obj.type == ALLEGRO_EVENT_MOUSE_BUTTON_UP)
 		if (*select == 0) {
-			
+
 			if (*play_button) {
 				*select = 0;
 				*current_scr = 5;
