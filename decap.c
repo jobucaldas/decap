@@ -31,16 +31,23 @@ struct rankingUsuario {
 	char name[4];
 	int pontos;
 };
+//Struct bullets
 typedef struct{
 	float posx,posy,m,q;
 	int current_collumn, current_line, cont_frames, sheety, sheetx,i, enable;
 }b;
+//Struct monster
 typedef struct{
 	float posx,posy,m,q,i;
 	int current_collumn, current_line, cont_frames, sheety, sheetx, enable,type;
 }m;
-
+//Struct main character
+typedef struct {
+	float vel, posx, posy;
+	int current_collumn, current_line, cont_frames, sheety, sheetx;
+} character;
 typedef struct rankingUsuario rgp;
+//file line counter
 int lines(){
     FILE* fp;
 	int i = 0;
@@ -55,7 +62,7 @@ int lines(){
 
     return i;
 }
-
+//function that adds new score and returns the top 10
 rgp* add_score(char name[], int score) {
 	FILE* fp;
 	rgp* a;
@@ -76,14 +83,14 @@ rgp* add_score(char name[], int score) {
 					indice = i;
 				}
 				if (a != NULL && p == 1 && i > 0 && igual != 2) {
+                    //delete a[i].name and a[i].pontos if a[i].name == name and score>a[i].pontos
 					if (igual == 1 && i - 2 >= indice && i >= 2) {
 						a[i - 2].pontos = a[i - 1].pontos;
 						strcpy(a[i - 2].name, a[i - 1].name);
 						a[n - 1].pontos = 0;
 						strcpy(a[n - 1].name, "NON");
-
 					}
-
+                    //copy lines with pontos<score to down
 					if (a[i - 1].pontos < score) {
 						a[i].pontos = a[i - 1].pontos;
 						strncpy(a[i].name, a[i - 1].name, 3);
@@ -93,10 +100,12 @@ rgp* add_score(char name[], int score) {
 						}
 
 					}
+                    //set name and score position
 					else if (a[i - 1].pontos >= score && a[i].pontos < score) {
 						a[i].pontos = score;
 						strcpy(a[i].name, name);
 					}
+					// if score == 0, set name to last position
 					else if (i == n - 2 && score <= a[i].pontos) {
 						a[i + 1].pontos = score;
 						strcpy(a[i + 1].name, name);
@@ -107,8 +116,9 @@ rgp* add_score(char name[], int score) {
 		}
 		fclose(fp);
 		fp = fopen("data.txt", "w");
+		//rewrite file
 		for (i = 0; i < n - bug; i++) {
-			if (i < 10 || strcmp(a[i].name, "NON") != 0) {
+			if (i < 10 || (strcmp(a[i].name, "NON") != 0||a[i].pontos!=0)) {
 				fprintf(fp, "%s %d\n", a[i].name, a[i].pontos);
 			}
 
@@ -147,7 +157,7 @@ ALLEGRO_BITMAP* create_bitmap(char* str) {
 
 	return img;
 }
-
+// Audio creation function
 ALLEGRO_AUDIO_STREAM* create_audio_stream(char* str) {
 	ALLEGRO_AUDIO_STREAM* stream = NULL;
 	stream = al_load_audio_stream(str, 4, 1024);
@@ -159,12 +169,7 @@ ALLEGRO_AUDIO_STREAM* create_audio_stream(char* str) {
 	return stream;
 }
 
-typedef struct {
-	float vel, posx, posy;
-	int current_collumn, current_line, cont_frames, sheety, sheetx;
-} character;
-
-//initializer
+//monster initializer
 void init_m( m * blts) {
     int k;
     for(k=0;k<50;k++){
@@ -181,7 +186,7 @@ void init_m( m * blts) {
         blts[k].i=0;
     }
 }
-
+//main char initializer
 void init_char(character* main_char) {
 	main_char->vel = 0.5;
 	main_char->posx = 1024/2-32;
@@ -192,7 +197,7 @@ void init_char(character* main_char) {
 	main_char->sheetx = 0;
 	main_char->sheety = 96*3;
 }
-
+//bullets initializer
 void init_blts( b * blts) {
     int k;
     for(k=0;k<3;k++){
@@ -209,35 +214,31 @@ void init_blts( b * blts) {
         blts[k].i=0;
     }
 }
-
+// bullets spawn
 void spawn_blts(b blts[],float mx,float my, float px, float py){
     int k=0;
-    for(k=0;k<3;k++){
+    if(blts[k].enable!=1){
+        //angular coefficient
+        blts[k].m=(py-my)/(px-mx);
+        //linear coefficient
+        blts[k].q=my-(blts[k].m*mx);
+        //set direction
+        blts[k].i=((mx-px)?2*(mx-px)/abs(mx-px):2);
+        //spawn behaviors
+        blts[k].posx=px;
 
-        if(blts[k].enable!=1){
-            blts[k].m=(py-my)/(px-mx);
+        blts[k].posy=py;
 
-            blts[k].q=my-(blts[k].m*mx);
-
-            blts[k].i=((mx-px)?2*(mx-px)/abs(mx-px):2);
-
-            blts[k].posx=px;
-
-            blts[k].posy=py;
-
-            blts[k].enable=1;
-
-            k=10;
-
-        }
+        blts[k].enable=1;
     }
-
 }
-
-void spawn_m(m blts[],double delta,float timer, float mx, float my){
+//monster spawn
+void spawn_m(m mnst[],double delta,float timer, float mx, float my){
     int k=0,t=((int)(timer/delta*10)),r=10*(((int)(timer/delta*13))%4);
     float px = 0, py = 0;
+    //spawn timer
     if(t%10==0){
+        //random spawnpoint
         t=((t%100)/10)%4;
         switch (t){
             case(0):
@@ -258,19 +259,22 @@ void spawn_m(m blts[],double delta,float timer, float mx, float my){
                 break;
         }
         for(k=0;k<50;k++){
-            if(blts[k].enable==0){
-                blts[k].type =abs(((int)(px))%3)%2;
-                blts[k].m=(mx==blts[k].posx?0:((blts[k].posy-my)/(blts[k].posx-mx)));
+            if(mnst[k].enable==0){
+                //zombie or goblin
+                mnst[k].type =abs(((int)(px))%3)%2;
+                //angular coefficient
+                mnst[k].m=(mx==mnst[k].posx?0:((mnst[k].posy-my)/(mnst[k].posx-mx)));
+                //linear coefficient
+                mnst[k].q=my-(mnst[k].m*mx);
+                //direction
+                mnst[k].i=0.8*(((int)mx!=(int)mnst[k].posx)?(0.2-(0.1*mnst[k].type))*(mx-mnst[k].posx)/abs(mx-mnst[k].posx):0.2-(0.1*mnst[k].type));
 
-                blts[k].q=my-(blts[k].m*mx);
+                mnst[k].posx=px;
 
-                blts[k].i=0.8*(((int)mx!=(int)blts[k].posx)?(0.2-(0.1*blts[k].type))*(mx-blts[k].posx)/abs(mx-blts[k].posx):0.2-(0.1*blts[k].type));
-
-                blts[k].posx=px;
-
-                blts[k].posy=py;
-                blts[k].current_line=blts[k].type*2;
-                blts[k].enable=1;
+                mnst[k].posy=py;
+                //sprite draw position in spritesheet
+                mnst[k].current_line=mnst[k].type*2;
+                mnst[k].enable=1;
                 k=50;
             }
         }
@@ -278,76 +282,84 @@ void spawn_m(m blts[],double delta,float timer, float mx, float my){
 }
 
 void destr_blts(b*blts,m* mnst,int * score){
-    int k,j;
-    for(k=0;k<1;k++){
-		if (blts[k].enable == 1 && (blts[k].posx > 1024 || blts[k].posx < 0 || blts[k].posy>576 || blts[k].posy < 0)) {
-			blts[k].enable = 0;
-		}
-        for(j=0;j<50;j++){
-            if(blts[k].posx>mnst[j].posx && blts[k].posx<mnst[j].posx+96 && blts[k].posy>mnst[j].posy && blts[k].posy<mnst[j].posy+96 && blts[k].enable==1 &&  mnst[j].enable==1){
-                blts[k].enable=0;
-                mnst[j].enable=2;
-				mnst[j].current_line = 6;
-				mnst[j].sheety = 6 * 96;
-
-                *score=*score+100;
-                j=50;
-            }
+    int k=0,j;
+    //collision with a border
+    if (blts[k].enable == 1 && (blts[k].posx > 1024 || blts[k].posx < 0 || blts[k].posy>576 || blts[k].posy < 0)) {
+        blts[k].enable = 0;
+    }
+    for(j=0;j<50;j++){
+        //collision with a monster
+        if(blts[k].posx>mnst[j].posx && blts[k].posx<mnst[j].posx+96 && blts[k].posy>mnst[j].posy && blts[k].posy<mnst[j].posy+96 && blts[k].enable==1 &&  mnst[j].enable==1){
+            //state definition
+            blts[k].enable=0;
+            //set died monster behaviors
+            mnst[j].enable=2;
+            mnst[j].current_line = 6;
+            mnst[j].sheety = 6 * 96;
+            *score=*score+100;
+            j=50;
         }
     }
 }
-
+    //bullets move function
 void move_blts(b*blts,double delta){
-    int k;
-    for(k=0;k<3;k++){
-        if(blts[k].enable==1){
-            blts[k].posx=blts[k].posx+cos(atan(blts[k].m))*blts[k].i/delta;
-            blts[k].posy=blts[k].posy+sin(atan(blts[k].m))*blts[k].i/delta;
-        }
+    int k=0;
+    if(blts[k].enable==1){
+        //set bullet's new coordinate
+        blts[k].posx=blts[k].posx+cos(atan(blts[k].m))*blts[k].i/delta;
+        blts[k].posy=blts[k].posy+sin(atan(blts[k].m))*blts[k].i/delta;
     }
 
 }
-
-void move_m(m*blts,double delta,double timer,float mx,float my){
+    //monster move function
+void move_m(m*mnst,double delta,double timer,float mx,float my){
     int k=0;
     for(k=0;k<50;k++){
-        if (blts[k].enable==1){
-            if(blts[k].posx>50&&blts[k].posx<924&&blts[k].posy>50&&blts[k].posy<400){
-                if(abs(blts[k].posx-mx)>4){
-                    if(( ((int)timer)%4==0 )|| blts[k].type==1){
-                        blts[k].m=(blts[k].posy-my)/(blts[k].posx-mx);
-                        blts[k].q=my-(blts[k].m*mx);
-                        blts[k].i=0.5*(((blts[k].m)!=0)?(0.7-(0.5*blts[k].type))*(mx-blts[k].posx)/abs(mx-blts[k].posx):0.7-(0.5*blts[k].type));
+        if (mnst[k].enable==1){
+            //movement after leaving the spawn point
+            if(mnst[k].posx>50&&mnst[k].posx<924&&mnst[k].posy>50&&mnst[k].posy<400){
+                //avoiding division by zero
+                if(abs(mnst[k].posx-mx)>4){
+                    //if monster==zombie or timer%4==0, update direction
+                    if(( ((int)timer)%4==0 )|| mnst[k].type==1){
+                        //set angular coefficient
+                        mnst[k].m=(mnst[k].posy-my)/(mnst[k].posx-mx);
+                        //set linear coefficient
+                        mnst[k].q=my-(mnst[k].m*mx);
+                        //set direction
+                        mnst[k].i=0.5*(((mnst[k].m)!=0)?(0.7-(0.5*mnst[k].type))*(mx-mnst[k].posx)/abs(mx-mnst[k].posx):0.7-(0.5*mnst[k].type));
                     }
-
-                        blts[k].posx=blts[k].posx+cos(atan(blts[k].m))*blts[k].i/delta;
+                        //set new posx
+                        mnst[k].posx=mnst[k].posx+cos(atan(mnst[k].m))*mnst[k].i/delta;
 
                 }
-            if(abs(blts[k].posy-my)>4)
-                blts[k].posy=blts[k].posy+sin(atan(blts[k].m))*blts[k].i/delta;
 
-            }else  if(!(blts[k].posx>50&&blts[k].posx<924)&&(((int)timer*10)%10==0 || blts[k].type==1)){
-                if(blts[k].posx<=50)
-                    blts[k].posx=blts[k].posx+0.1/delta;
+            if(abs(mnst[k].posy-my)>4)
+                mnst[k].posy=mnst[k].posy+sin(atan(mnst[k].m))*mnst[k].i/delta;
+            //movement before leaving the spawn point
+            }else  if(!(mnst[k].posx>50&&mnst[k].posx<924)&&(((int)timer*10)%10==0 || mnst[k].type==1)){
+                if(mnst[k].posx<=50)
+                    mnst[k].posx=mnst[k].posx+0.1/delta;
                 else
-                    blts[k].posx=blts[k].posx-0.1/delta;
-            }else if(!(blts[k].posy>50&&blts[k].posy<400)&&(((int)timer*10)%10==0 || blts[k].type==1)){
-                if(blts[k].posy<100)
-                    blts[k].posy=blts[k].posy+0.1/delta;
+                    mnst[k].posx=mnst[k].posx-0.1/delta;
+            }else if(!(mnst[k].posy>50&&mnst[k].posy<400)&&(((int)timer*10)%10==0 || mnst[k].type==1)){
+                if(mnst[k].posy<100)
+                    mnst[k].posy=mnst[k].posy+0.1/delta;
                 else
-                    blts[k].posy=blts[k].posy-0.1/delta;
+                    mnst[k].posy=mnst[k].posy-0.1/delta;
             }
-        if(blts[k].posy>2000||blts[k].posy<-2000||blts[k].posx>2000||blts[k].posx<-2000)
-            blts[k].enable=0;
-
+        //avoiding infinity position
+        if(mnst[k].posy>2000||mnst[k].posy<-2000||mnst[k].posx>2000||mnst[k].posx<-2000)
+            mnst[k].enable=0;
         }
     }
 }
-
+//main char is dead?
 int died(m* mnst, character* mc){
     int i,k=0;
     for(i=0;i<50;i++){
         if(mnst[i].enable==1){
+            //set collision flag
             if(abs(mnst[i].posy-mc->posy)<96&&abs(mnst[i].posx-(mc->posx))<78){
                 k=1;
                 i=50;
@@ -356,7 +368,7 @@ int died(m* mnst, character* mc){
     }
     return k;
 }
-
+//reading keyboard input
 char read_keyboard_down(ALLEGRO_EVENT event_obj) {
 	if (event_obj.type == ALLEGRO_EVENT_KEY_DOWN) {
 		switch (event_obj.keyboard.keycode) {
@@ -710,7 +722,7 @@ void draw_game(int* has_sound, int* score, int* wave, double time, m* mnst, b* b
 		main_char->posx = main_char->posx - main_char->vel / delta;
 	if (*select == 2 && (main_char->posy + main_char->vel / delta) < 576 - 125)
 		main_char->posy = main_char->posy + main_char->vel / delta;
-	if (*(select + 1) == 2 && (main_char->posx + main_char->vel / delta) < 1024 - 125)
+	if (*(select + 1) == 2 && (main_char->posx + main_char->vel / delta) < 1024 - 100)
 		main_char->posx = main_char->posx + main_char->vel / delta;
 
 	if (event_obj.type == ALLEGRO_EVENT_MOUSE_BUTTON_DOWN) {
@@ -735,18 +747,16 @@ void draw_game(int* has_sound, int* score, int* wave, double time, m* mnst, b* b
 
 	}
 
-    int i;
+    int i=0;
     move_blts(blts, delta);
     destr_blts(blts,mnst,score);
     move_m(mnst, delta,time,main_char->posx, main_char->posy);
-    for(i=0;i<1;i++){
-        if(blts[i].enable==1){
-			if(*has_sound)
-				al_play_sample(shot_sound, 1.0, 0.0, 1.0, ALLEGRO_PLAYMODE_ONCE, NULL);
+    if(blts[i].enable==1){
+        if(*has_sound)
+            al_play_sample(shot_sound, 1.0, 0.0, 1.0, ALLEGRO_PLAYMODE_ONCE, NULL);
 
-			blts[i].sheety = 0;
-            draw_sprite(blts[i].posx,blts[i].posy,&blts[i].cont_frames,&blts[i].current_collumn,&blts[i].current_line,&blts[i].sheetx,&blts[i].sheety,12,delta,bullet,event_obj);
-		}
+        blts[i].sheety = 0;
+        draw_sprite(blts[i].posx,blts[i].posy,&blts[i].cont_frames,&blts[i].current_collumn,&blts[i].current_line,&blts[i].sheetx,&blts[i].sheety,12,delta,bullet,event_obj);
     }
     for(i=0;i<50;i++){
 		if (mnst[i].enable == 1)
@@ -756,6 +766,8 @@ void draw_game(int* has_sound, int* score, int* wave, double time, m* mnst, b* b
     }
 
     if (*score+cont*100<((*wave)*100*(*wave)+100)){
+        if(cont==0)
+            init_m(mnst);
         spawn_m(mnst,delta,time,main_char->posx, main_char->posy);
     }else if(cont==0){
         *wave=*wave+1;
@@ -814,7 +826,7 @@ void draw_options(int* has_sound, int* current_scr, int* select, ALLEGRO_FONT* f
 void draw_briefing(int* play_button, int* current_scr, int* select, ALLEGRO_DISPLAY* window, ALLEGRO_FONT* font, ALLEGRO_FONT* small_font, int has_event, ALLEGRO_EVENT_QUEUE* event_queue, ALLEGRO_EVENT event_obj) {
 	int selected = 0;
 
-	al_draw_text(small_font, al_map_rgb(255, 255, 255), 30, 30, ALLEGRO_ALIGN_LEFT, "Após se preparar para o ultimo boss");
+	al_draw_text(small_font, al_map_rgb(255, 255, 255), 30, 30, ALLEGRO_ALIGN_LEFT, "Após se preparar para o último boss");
 	al_draw_text(small_font, al_map_rgb(255, 255, 255), 30, 30 + 30, ALLEGRO_ALIGN_LEFT, "do seu mmorpg favorito por dias você");
 	al_draw_text(small_font, al_map_rgb(255, 255, 255), 30, 30 + 30 * 2, ALLEGRO_ALIGN_LEFT, "acaba perdendo mesmo após tirar mais");
 	al_draw_text(small_font, al_map_rgb(255, 255, 255), 30, 30 + 30 * 3, ALLEGRO_ALIGN_LEFT, "de 90% de sua vida total. Não sendo");
@@ -1032,6 +1044,7 @@ int main(void) {
 	int score = 0;
 	int has_sound = 1;
 	int play_button = 0;
+	//create and initialize of pointers  and nickname
 	rgp* scores = add_score("NON", 0);
     b *blts;
     blts=(b*) malloc(3*sizeof(b));
