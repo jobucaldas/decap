@@ -21,7 +21,6 @@
 #define FPS 60.0
 #define CHAR_SIZE 96
 #define SHEET_COLLUMNS 4
-#define SHEET_LINES 6
 
 /*******************************************************************************************************************
 ********************************************************************************************************************/
@@ -60,58 +59,77 @@ int lines(){
 rgp* add_score(char name[], int score) {
 	FILE* fp;
 	rgp* a;
-	int i,n=lines()+1;
+	int i, n = lines() + 1, p, igual = 0, indice, bug = 1;
 	if ((fp = fopen("data.txt", "r")) != NULL) {
-        a = (rgp*)malloc(n * sizeof(rgp));
+		a = (rgp*)malloc(n * sizeof(rgp));
 		i = 0;
-		for(i=0;i<n-1;i++){
+		for (i = 0; i < n - 1; i++) {
 			fscanf(fp, "%s %d\n", &a[i].name, &a[i].pontos);
 		}
-		for (i = n-2; i > 0; i--) {
-			if (a != NULL) {
-				if (a[i - 1].pontos < score) {
-					a[i].pontos = a[i - 1].pontos;
-					strncpy(a[i].name, a[i - 1].name, 3);
-					if (i == 1) {
-						strcpy(a[0].name, name);
-						a[0].pontos = score;
+		for (p = 0; p < 2; p++) {
+			for (i = n - 2; i >= 0; i--) {
+				if (strcmp(a[i].name, name) == 0 && a[i].pontos >= score && strcmp(a[i].name, "NON") != 0) {
+					igual = 2;
+				}
+				else if (strcmp(a[i].name, name) == 0 && strcmp(a[i].name, "NON") != 0) {
+					igual = 1;
+					indice = i;
+				}
+				if (a != NULL && p == 1 && i > 0 && igual != 2) {
+					if (igual == 1 && i - 2 >= indice && i >= 2) {
+						a[i - 2].pontos = a[i - 1].pontos;
+						strcpy(a[i - 2].name, a[i - 1].name);
+						a[n - 1].pontos = 0;
+						strcpy(a[n - 1].name, "NON");
+
 					}
 
-				}
-				else if (a[i - 1].pontos >= score && a[i].pontos < score) {
-					a[i].pontos = score;
-					strcpy(a[i].name, name);
-				}else if(i==n-2&&score<=a[i].pontos){
-                    a[i+1].pontos = score;
-					strcpy(a[i+1].name, name);
+					if (a[i - 1].pontos < score) {
+						a[i].pontos = a[i - 1].pontos;
+						strncpy(a[i].name, a[i - 1].name, 3);
+						if (i == 1) {
+							strcpy(a[0].name, name);
+							a[0].pontos = score;
+						}
+
+					}
+					else if (a[i - 1].pontos >= score && a[i].pontos < score) {
+						a[i].pontos = score;
+						strcpy(a[i].name, name);
+					}
+					else if (i == n - 2 && score <= a[i].pontos) {
+						a[i + 1].pontos = score;
+						strcpy(a[i + 1].name, name);
+						bug = 0;
+					}
 				}
 			}
 		}
-
 		fclose(fp);
 		fp = fopen("data.txt", "w");
-		for (i = 0; i < n; i++) {
-            if(i<10||strcmp(a[i].name,"NON")!=0)
-                fprintf(fp, "%s %d\n", a[i].name, a[i].pontos);
+		for (i = 0; i < n - bug; i++) {
+			if (i < 10 || strcmp(a[i].name, "NON") != 0) {
+				fprintf(fp, "%s %d\n", a[i].name, a[i].pontos);
+			}
 
 		}
 		fclose(fp);
 	}
 	else {
 		fp = fopen("data.txt", "w");
-		n=10;
-        a = (rgp*)malloc(n * sizeof(rgp));
+		n = 10;
+		a = (rgp*)malloc(n * sizeof(rgp));
 		fprintf(fp, "%s %d\n", name, score);
 		strcpy(a[0].name, name);
-		a[0].pontos=score;
+		a[0].pontos = score;
 		for (i = 1; i < 10; i++) {
 			fprintf(fp, "NON 0\n");
-			strcpy(a[i].name,"NON");
-			a[i].pontos=0;
+			strcpy(a[i].name, "NON");
+			a[i].pontos = 0;
 		}
 		fclose(fp);
 	}
-	a = (rgp*) realloc(a,10 * sizeof(rgp));
+	a = (rgp*)realloc(a, 10 * sizeof(rgp));
 	return a;
 }
 
@@ -240,7 +258,7 @@ void spawn_m(m blts[],double delta,float timer, float mx, float my){
                 break;
         }
         for(k=0;k<50;k++){
-            if(blts[k].enable!=1){
+            if(blts[k].enable==0){
                 blts[k].type =abs(((int)(px))%3)%2;
                 blts[k].m=(mx==blts[k].posx?0:((blts[k].posy-my)/(blts[k].posx-mx)));
 
@@ -261,16 +279,19 @@ void spawn_m(m blts[],double delta,float timer, float mx, float my){
 
 void destr_blts(b*blts,m* mnst,int * score){
     int k,j;
-    for(k=0;k<3;k++){
+    for(k=0;k<1;k++){
 		if (blts[k].enable == 1 && (blts[k].posx > 1024 || blts[k].posx < 0 || blts[k].posy>576 || blts[k].posy < 0)) {
 			blts[k].enable = 0;
 		}
         for(j=0;j<50;j++){
             if(blts[k].posx>mnst[j].posx && blts[k].posx<mnst[j].posx+96 && blts[k].posy>mnst[j].posy && blts[k].posy<mnst[j].posy+96 && blts[k].enable==1 &&  mnst[j].enable==1){
                 blts[k].enable=0;
-                mnst[j].enable=0;
+                mnst[j].enable=2;
+				mnst[j].current_line = 6;
+				mnst[j].sheety = 6 * 96;
+
                 *score=*score+100;
-                 j=50;
+                j=50;
             }
         }
     }
@@ -323,7 +344,7 @@ void move_m(m*blts,double delta,double timer,float mx,float my){
     }
 }
 
-int died(m*mnst, character* mc){
+int died(m* mnst, character* mc){
     int i,k=0,j,l;
     for(i=0;i<50;i++){
         if(mnst[i].enable==1){
@@ -543,49 +564,10 @@ void draw_sprite(int posx, int posy, int* char_frames, int* collumn, int* line, 
     al_draw_bitmap_region(spritesheet, *sheetx, *sheety, size, size, posx, posy, 0);
 }
 
-// Draw screen when no screen was called
-void draw_noscr(int* current_scr, int* select, ALLEGRO_FONT* font, int has_event, ALLEGRO_EVENT_QUEUE* event_queue, ALLEGRO_EVENT event_obj, int* close_window) {
-	int selected[2] = { 0,0 };
-	int i;
-
-	al_draw_text(font, al_map_rgb(255, 255, 255), 80, 300 - 60, ALLEGRO_ALIGN_LEFT, "Por algum motivo nenhuma tela foi chamada,");
-	al_draw_text(font, al_map_rgb(255, 255, 255), 80 + 140, 300 - 20, ALLEGRO_ALIGN_LEFT, "deseja voltar ao menu?");
-
-	if (event_obj.type == ALLEGRO_EVENT_MOUSE_AXES) {
-		if (event_obj.mouse.y > 400 && event_obj.mouse.y < 400 + 36) {
-			if (event_obj.mouse.x > 400 - 80 && event_obj.mouse.x < 400 - 60)
-				* select = 0;
-			else if (event_obj.mouse.x > 400 + 50 - 16 && event_obj.mouse.x < 400 + 70 - 16)
-				* select = 1;
-			else *select = 20;
-		}
-		else *select = 20;
-	}
-	for (i = 0; i < 2; i++)
-		if (i == *select)
-			selected[i] = 150;
-		else
-			selected[i] = 0;
-
-	if (event_obj.type == ALLEGRO_EVENT_MOUSE_BUTTON_UP)
-		if (*select == 1)
-			* close_window = 1;
-		else if (*select == 0) {
-			*current_scr = 0;
-			*select = 20;
-		}
-
-	al_draw_text(font, al_map_rgb(255 - selected[0], 255 - selected[0], 255 - selected[0]), 400 - 80, 400, ALLEGRO_ALIGN_LEFT, "Sim");
-	al_draw_text(font, al_map_rgb(255 - selected[1], 255 - selected[1], 255 - selected[1]), 400 + 50 - 16, 400, ALLEGRO_ALIGN_LEFT, "Não");
-}
-
 // Draw game main menu
-void draw_menu(int* current_scr, int* select, ALLEGRO_FONT* font, int has_event, ALLEGRO_EVENT_QUEUE* event_queue, ALLEGRO_EVENT event_obj, int* close_window) {
+void draw_menu(int* play_button, int* current_scr, int* select, ALLEGRO_FONT* font, int has_event, ALLEGRO_EVENT_QUEUE* event_queue, ALLEGRO_EVENT event_obj, int* close_window) {
 	int selected[5] = { 0,0,0,0,0 };
 	int i;
-
-	// Logo
-	al_draw_text(font, al_map_rgb(255, 255, 255), 1024 / 2 - 32, 200 / 2, ALLEGRO_ALIGN_LEFT, "DeCAP");
 
 	// Parse mouse axes
 	if (event_obj.type == ALLEGRO_EVENT_MOUSE_AXES) {
@@ -618,14 +600,16 @@ void draw_menu(int* current_scr, int* select, ALLEGRO_FONT* font, int has_event,
 		if (*select == 4)
 			* close_window = 1;
 		else if (*select == 0) {
-			*current_scr = 5;
-			*select = 0;
+			*play_button = 1;
+			*current_scr = 3;
+			*select = 20;
 		}
 		else if (*select == 3) {
 			*current_scr = 2;
 			*select = 20;
 		}
 		else if (*select == 1) {
+			*play_button = 0;
 			*current_scr = 4;
 			*select = 20;
 		}
@@ -642,9 +626,47 @@ void draw_menu(int* current_scr, int* select, ALLEGRO_FONT* font, int has_event,
 	al_draw_text(font, al_map_rgb(255 - selected[4], 255 - selected[4], 255 - selected[4]), 20, 300 + 50 * 4, ALLEGRO_ALIGN_LEFT, "Sair");
 }
 
+void draw_score(int* current_scr, int* score, char* nick, int* select, ALLEGRO_FONT* font, ALLEGRO_EVENT event_obj) {
+	int selected[2] = { 0,0 };
+	int i;
+	
+	al_draw_text(font, al_map_rgb(255, 255, 255), 1024/2-100, 576/2/2, ALLEGRO_ALIGN_LEFT, "Seu Score");
+	printf("%s %d\n", nick, *score);
+	al_draw_textf(font, al_map_rgb(255, 255, 255), 1024 / 2 * 0.75, 576/2-10, ALLEGRO_ALIGN_LEFT, "%s%10d", nick, *score);
+
+	if (event_obj.type == ALLEGRO_EVENT_MOUSE_AXES) {
+		if (event_obj.mouse.y > 400 && event_obj.mouse.y < 400 + 36) {
+			if (event_obj.mouse.x > 250 && event_obj.mouse.x < 250 + 100)
+				* select = 0;
+			else if (event_obj.mouse.x > 1024 / 2 + 100 && event_obj.mouse.x < 1024 / 2 + 100 + 50)
+				* select = 1;
+			else *select = 20;
+		}
+		else *select = 20;
+	}
+	for (i = 0; i < 2; i++)
+		if (i == *select)
+			selected[i] = 150;
+		else
+			selected[i] = 0;
+
+	if (event_obj.type == ALLEGRO_EVENT_MOUSE_BUTTON_UP)
+		if (*select == 1) {
+			*current_scr = 4;
+			*select = 20;
+		}
+		else if (*select == 0) {
+			*current_scr = 0;
+			*select = 20;
+		}
+
+	al_draw_text(font, al_map_rgb(255 - selected[0], 255 - selected[0], 255 - selected[0]), 1024/2-200, 400, ALLEGRO_ALIGN_LEFT, "Menu");
+	al_draw_text(font, al_map_rgb(255 - selected[1], 255 - selected[1], 255 - selected[1]), 1024/2 + 100, 400, ALLEGRO_ALIGN_LEFT, "Scores");
+}
+
 // Draw game screen
-void draw_game(int* has_sound, int* score,int* wave,double time,m* mnst,b* blts,character* main_char, int* current_scr, int* select, double delta, char* nick, ALLEGRO_FONT* font, ALLEGRO_BITMAP* spritesheet,ALLEGRO_BITMAP* bullet, int has_event, ALLEGRO_EVENT_QUEUE* event_queue, ALLEGRO_BITMAP* bg, ALLEGRO_SAMPLE* shot_sound, ALLEGRO_EVENT event_obj) {
-	int troca=1,cont=0;
+void draw_game(int* has_sound, int* score, int* wave, double time, m* mnst, b* blts, character* main_char, int* current_scr, int* select, double delta, char* nick, ALLEGRO_FONT* font, ALLEGRO_BITMAP* spritesheet, ALLEGRO_BITMAP* bullet, int has_event, ALLEGRO_EVENT_QUEUE* event_queue, ALLEGRO_BITMAP* bg, ALLEGRO_SAMPLE* shot_sound, ALLEGRO_EVENT event_obj) {
+	int troca = 1, cont = 0, killed = 0;
 
 	switch (read_keyboard_down(event_obj)) {
 	case 'W':
@@ -687,30 +709,31 @@ void draw_game(int* has_sound, int* score,int* wave,double time,m* mnst,b* blts,
 
 	if (*select == 1 && (main_char->posy - main_char->vel / delta) > 25)
 		main_char->posy = main_char->posy - main_char->vel / delta;
-	if (*(select + 1) == 1 && (main_char->posx + main_char->vel / delta) > 25)
+	if (*(select + 1) == 1 && (main_char->posx + main_char->vel / delta) > 20)
 		main_char->posx = main_char->posx - main_char->vel / delta;
 	if (*select == 2 && (main_char->posy + main_char->vel / delta) < 576 - 125)
 		main_char->posy = main_char->posy + main_char->vel / delta;
-	if (*(select + 1) == 2 && (main_char->posx + main_char->vel / delta) < 1024 - 125)
+	if (*(select + 1) == 2 && (main_char->posx + main_char->vel / delta) < 1024 - 105)
 		main_char->posx = main_char->posx + main_char->vel / delta;
-	if (event_obj.type == ALLEGRO_EVENT_MOUSE_BUTTON_DOWN){
-        main_char->current_collumn=0;
-        if (event_obj.mouse.x-32 < main_char->posx) {
-            spawn_blts(blts,event_obj.mouse.x,event_obj.mouse.y, main_char->posx, main_char->posy);
-            main_char->sheety=96*5;
-        }else{
-            main_char->sheety=96*4;
-            spawn_blts(blts,event_obj.mouse.x,event_obj.mouse.y, main_char->posx+86, main_char->posy);
-        }
-	}else{
-	    if((main_char->current_collumn)==3){
-            if (*select > 0 || *(select + 1) > 0)
-                main_char->current_line=1;
-            else
-               main_char->current_line=3;
-        main_char->sheety = main_char->current_line * CHAR_SIZE;
-	    }
 
+	if (event_obj.type == ALLEGRO_EVENT_MOUSE_BUTTON_DOWN) {
+		main_char->current_collumn = 0;
+		if (event_obj.mouse.x - 32 < main_char->posx) {
+			spawn_blts(blts, event_obj.mouse.x, event_obj.mouse.y, main_char->posx, main_char->posy);
+			main_char->sheety = 96 * 5;
+		}
+		else {
+			main_char->sheety = 96 * 4;
+			spawn_blts(blts, event_obj.mouse.x, event_obj.mouse.y, main_char->posx + 86, main_char->posy);
+		}
+	}
+	else if (main_char->current_line != 3) {
+		if (*select > 0 || *(select + 1) > 0)
+			main_char->current_line = 1;
+		else
+			main_char->current_line = 3;
+
+		main_char->sheety = 96 * main_char->current_line;
 	}
 
     int i;
@@ -727,17 +750,19 @@ void draw_game(int* has_sound, int* score,int* wave,double time,m* mnst,b* blts,
 		}
     }
     for(i=0;i<50;i++){
-        if(mnst[i].enable!=0){
-            cont++;
-            draw_sprite(mnst[i].posx,mnst[i].posy,&main_char->cont_frames,&main_char->current_collumn,&mnst[i].current_line,&mnst[i].sheetx,&mnst[i].sheety,96,delta,spritesheet,event_obj);
-		}
+		if (mnst[i].enable == 1)
+			cont++;
+		if (mnst[i].enable != 0)
+			draw_sprite(mnst[i].posx, mnst[i].posy, &main_char->cont_frames, &main_char->current_collumn, &mnst[i].current_line, &mnst[i].sheetx, &mnst[i].sheety, 96, delta, spritesheet, event_obj);
     }
 
     if (*score+cont*100<((*wave)*100*(*wave)+100)){
         spawn_m(mnst,delta,time,main_char->posx, main_char->posy);
     }else if(cont==0){
-       *wave=*wave+1;
+        *wave=*wave+1;
+		init_m(mnst);
     }
+
 	draw_sprite(main_char->posx, main_char->posy, &main_char->cont_frames, &main_char->current_collumn, &main_char->current_line, &main_char->sheetx, &main_char->sheety,96,delta, spritesheet, event_obj);
     al_draw_textf(font, al_map_rgb(255 , 255 , 255 ), 1024 / 2 - 75, 30, ALLEGRO_ALIGN_RIGHT, "SCORE %d ",*score+*wave*1000);
     al_draw_textf(font, al_map_rgb(255 , 255 , 255 ), 1024 / 2 + 75, 30, ALLEGRO_ALIGN_LEFT, "WAVE %d ",*wave);
@@ -746,7 +771,7 @@ void draw_game(int* has_sound, int* score,int* wave,double time,m* mnst,b* blts,
         init_m(mnst);
         init_blts(blts);
         init_char(main_char);
-        *current_scr=4;
+        *current_scr=6;
     }
 }
 
@@ -787,7 +812,7 @@ void draw_options(int* has_sound, int* current_scr, int* select, ALLEGRO_FONT* f
 }
 
 // Draw briefing screen
-void draw_briefing(int* current_scr, int* select, ALLEGRO_DISPLAY* window, ALLEGRO_FONT* font, ALLEGRO_FONT* small_font, int has_event, ALLEGRO_EVENT_QUEUE* event_queue, ALLEGRO_EVENT event_obj) {
+void draw_briefing(int* play_button, int* current_scr, int* select, ALLEGRO_DISPLAY* window, ALLEGRO_FONT* font, ALLEGRO_FONT* small_font, int has_event, ALLEGRO_EVENT_QUEUE* event_queue, ALLEGRO_EVENT event_obj) {
 	int selected = 0;
 
 	al_draw_text(small_font, al_map_rgb(255, 255, 255), 30, 30, ALLEGRO_ALIGN_LEFT, "Após se preparar para o ultimo boss");
@@ -804,12 +829,22 @@ void draw_briefing(int* current_scr, int* select, ALLEGRO_DISPLAY* window, ALLEG
 	al_draw_text(small_font, al_map_rgb(255, 255, 255), 30, 30 + 30 * 12, ALLEGRO_ALIGN_LEFT, "Sobreviva o máximo que conseguir!");
 
 	if (event_obj.type == ALLEGRO_EVENT_MOUSE_AXES) {
-		if (event_obj.mouse.x < 350) {
-			if (event_obj.mouse.y > 300 + 50 * 4 && event_obj.mouse.y < 300 + 50 * 4 + 40)
-				* select = 0;
+		if (*play_button) {
+			if (event_obj.mouse.x > 350) {
+				if (event_obj.mouse.y > 300 + 50 * 4 && event_obj.mouse.y < 300 + 50 * 4 + 40)
+					* select = 0;
+				else *select = 20;
+			}
 			else *select = 20;
 		}
-		else *select = 20;
+		else {
+			if (event_obj.mouse.x < 350) {
+				if (event_obj.mouse.y > 300 + 50 * 4 && event_obj.mouse.y < 300 + 50 * 4 + 40)
+					* select = 0;
+				else *select = 20;
+			}
+			else *select = 20;
+		}
 	}
 	if (*select == 0)
 		selected = 150;
@@ -818,11 +853,21 @@ void draw_briefing(int* current_scr, int* select, ALLEGRO_DISPLAY* window, ALLEG
 
 	if (event_obj.type == ALLEGRO_EVENT_MOUSE_BUTTON_UP)
 		if (*select == 0) {
-			*current_scr = 0;
-			*select = 20;
+			
+			if (*play_button) {
+				*select = 0;
+				*current_scr = 5;
+			}
+			else {
+				*select = 20;
+				*current_scr = 0;
+			}
 		}
 
-	al_draw_text(font, al_map_rgb(255 - selected, 255 - selected, 255 - selected), 20, 300 + 50 * 4, ALLEGRO_ALIGN_LEFT, "Voltar");
+	if (*play_button) {
+		al_draw_text(font, al_map_rgb(255 - selected, 255 - selected, 255 - selected), 1024 - 200, 300 + 50 * 4, ALLEGRO_ALIGN_LEFT, "Continuar");
+	} else
+		al_draw_text(font, al_map_rgb(255 - selected, 255 - selected, 255 - selected), 20, 300 + 50 * 4, ALLEGRO_ALIGN_LEFT, "Voltar");
 }
 
 // Draw highs
@@ -830,17 +875,15 @@ void draw_hiscore(rgp *score ,char name[], int scores, int* current_scr, int* se
 	int selected = 0;
 	int i;
 
-	al_draw_text(font, al_map_rgb(255 - selected, 255 - selected, 255 - selected), 1024 / 2 - 75, 40, ALLEGRO_ALIGN_LEFT, "HIGH SCORES");
-
-	for (i = 0; i < 10; i++)
-		if (strlen(score[i].name) == 3)
-			al_draw_textf(small_font, al_map_rgb(255 - selected, 255 - selected, 255 - selected), (1024 / 2) - 40, 90 + 40 * i, ALLEGRO_ALIGN_LEFT, "%s - %i", score[i].name, score[i].pontos);
-
+	for (i = 0; i < 10; i++){
+		al_draw_textf(font, al_map_rgb(255 - selected, 255 - selected, 255 - selected), (1024 / 2) - 264, 92 + 33 * i * 1.32, ALLEGRO_ALIGN_LEFT, "%s", score[i].name);
+		al_draw_textf(font, al_map_rgb(255 - selected, 255 - selected, 255 - selected), (1024 / 2) + 178, 92 + 33 * i * 1.32, ALLEGRO_ALIGN_LEFT, "%10d", score[i].pontos);
+	}
 
 
 	if (event_obj.type == ALLEGRO_EVENT_MOUSE_AXES) {
 		if (event_obj.mouse.x < 350) {
-			if (event_obj.mouse.y > 300 + 50 * 4 && event_obj.mouse.y < 300 + 50 * 4 + 40)
+			if (event_obj.mouse.y > 300 + 50 * 4.7 && event_obj.mouse.y < 300 + 50 * 4.7 + 40)
 				* select = 0;
 			else *select = 20;
 		}
@@ -857,7 +900,7 @@ void draw_hiscore(rgp *score ,char name[], int scores, int* current_scr, int* se
 			*select = 20;
 		}
 
-	al_draw_text(font, al_map_rgb(255 - selected, 255 - selected, 255 - selected), 20, 300 + 50 * 4, ALLEGRO_ALIGN_LEFT, "Voltar");
+	al_draw_text(font, al_map_rgb(255 - selected, 255 - selected, 255 - selected), 20, 300 + 50 * 4.7, ALLEGRO_ALIGN_LEFT, "Voltar");
 }
 
 // Draw name asking
@@ -880,7 +923,8 @@ void draw_name(int* current_scr, int* select, char* nick, ALLEGRO_FONT* font, in
                 *select=0;
 		}
 		else if (buffer == '\n'&& *select==3) {
-			*select = 20;
+			*select = 0;
+			*(select+1) = 0;
 			nick[3] = '\0';
 			*current_scr = 1;
 		}
@@ -894,7 +938,7 @@ void draw_name(int* current_scr, int* select, char* nick, ALLEGRO_FONT* font, in
 }
 
 // Draw current screen (game, menu, etc)
-void draw_scr(rgp* arquivo ,int* has_sound, int* wave,double time,m* mnst,b * blts,int*  score, character* main_char, int* current_scr, int* select, char* nick, double delta, ALLEGRO_BITMAP* spritesheet,ALLEGRO_BITMAP* bullet, ALLEGRO_DISPLAY* window, ALLEGRO_FONT* font, ALLEGRO_FONT* small_font, int has_event, ALLEGRO_EVENT_QUEUE* event_queue, ALLEGRO_EVENT event_obj, ALLEGRO_BITMAP* bg, ALLEGRO_SAMPLE* shot_sound, int* close_window) {
+void draw_scr(int* play_button, rgp* arquivo ,int* has_sound, int* wave,double time,m* mnst,b * blts,int*  score, character* main_char, int* current_scr, int* select, char* nick, double delta, ALLEGRO_BITMAP* spritesheet,ALLEGRO_BITMAP* bullet, ALLEGRO_DISPLAY* window, ALLEGRO_FONT* font, ALLEGRO_FONT* small_font, int has_event, ALLEGRO_EVENT_QUEUE* event_queue, ALLEGRO_EVENT event_obj, ALLEGRO_BITMAP* bg, ALLEGRO_SAMPLE* shot_sound, int* close_window) {
 	/*
 	 *  0 - Menu
 	 *  1 - Jogo
@@ -902,11 +946,12 @@ void draw_scr(rgp* arquivo ,int* has_sound, int* wave,double time,m* mnst,b * bl
 	 *  3 - Briefing
 	 *  4 - High Scores
 	 *  5 - Insert Name
+	 *  6 - Score
 	 */
 
 	switch (*current_scr) {
 	case 0:
-		draw_menu(current_scr, select, font, has_event, event_queue, event_obj, close_window);
+		draw_menu(play_button, current_scr, select, font, has_event, event_queue, event_obj, close_window);
 		break;
 	case 1:
 		draw_game(has_sound, score,wave,time,mnst,blts,main_char, current_scr, select, delta, nick, font, spritesheet, bullet ,has_event, event_queue, bg, shot_sound, event_obj);
@@ -915,7 +960,7 @@ void draw_scr(rgp* arquivo ,int* has_sound, int* wave,double time,m* mnst,b * bl
 		draw_options(has_sound, current_scr, select, font, has_event, event_queue, event_obj);
 		break;
 	case 3:
-		draw_briefing(current_scr, select, window, font, small_font, has_event, event_queue, event_obj);
+		draw_briefing(play_button, current_scr, select, window, font, small_font, has_event, event_queue, event_obj);
 		break;
 	case 4:
 		draw_hiscore(arquivo,nick, *score, current_scr, select, font, small_font, has_event, event_queue, event_obj);
@@ -923,8 +968,10 @@ void draw_scr(rgp* arquivo ,int* has_sound, int* wave,double time,m* mnst,b * bl
 	case 5:
 		draw_name(current_scr, select, nick, font, has_event, event_queue, event_obj);
 		break;
+	case 6:
+		draw_score(current_scr, score, nick, select, font, event_obj);
+		break;
 	default:
-		draw_noscr(current_scr, select, font, has_event, event_queue, event_obj, close_window);
 		break;
 	}
 }
@@ -985,6 +1032,7 @@ int main(void) {
 	int i,wave=0;
 	int score = 0;
 	int has_sound = 1;
+	int play_button = 0;
 	rgp* scores = add_score("NON", 0);
     b *blts;
     blts=(b*) malloc(3*sizeof(b));
@@ -1102,41 +1150,40 @@ int main(void) {
 				al_set_audio_stream_playmode(bgm, ALLEGRO_PLAYMODE_LOOP);
 
 				bg = create_bitmap("bg/arena.png");
+			} else if (current_scr == 6) {
+				scores = add_score(nick, score);
+
+				al_destroy_audio_stream(bgm);
+
+				bgm = create_audio_stream("bgm/menu.ogg");
+				al_attach_audio_stream_to_mixer(bgm, al_get_default_mixer());
+				al_set_audio_stream_playmode(bgm, ALLEGRO_PLAYMODE_LOOP);
+
+				bg = create_bitmap("bg/room.png");
 			} else if (current_scr == 3) {
 				bg = create_bitmap("bg/room.png");
 			} else if (current_scr == 0) {
+				*nick = '\0';
+				*(nick + 1) = '\0';
+				*(nick + 2) = '\0';
+				score = 0;
+				wave = 0;
+
 				bg = create_bitmap("bg/main_menu.png");
-			}
-			else if (current_scr == 5) {
+			} else if (current_scr == 5) {
 				bg = create_bitmap("bg/name.png");
 			}
 			else if (current_scr == 2) {
 				bg = create_bitmap("bg/option.png");
 			}
 			else if (current_scr == 4) {
-				if (old_scr == 1) {
-                    old_scr = current_scr;
-					scores = add_score(nick, score );
-					*nick = '\0';
-					*(nick + 1) = '\0';
-					*(nick + 2) = '\0';
-					score=0;
-                    wave=0;
+				*nick = '\0';
+				*(nick + 1) = '\0';
+				*(nick + 2) = '\0';
+				score = 0;
+				wave = 0;
 
-					al_destroy_audio_stream(bgm);
-
-					bgm = create_audio_stream("bgm/menu.ogg");
-					al_attach_audio_stream_to_mixer(bgm, al_get_default_mixer());
-					al_set_audio_stream_playmode(bgm, ALLEGRO_PLAYMODE_LOOP);
-					//arqRanking(score);
-				}else{
-                    *nick = '\0';
-                    *(nick + 1) = '\0';
-                    *(nick + 2) = '\0';
-                    score=0;
-                    wave=0;
-                }
-                bg = create_bitmap("bg/main_menu.png");
+                bg = create_bitmap("bg/hiscores.png");
             }
 			select[1] = 0;
             old_scr = current_scr;
@@ -1149,7 +1196,7 @@ int main(void) {
 			al_draw_text(font, al_map_rgb(255, 255, 255), 280, 10, ALLEGRO_ALIGN_LEFT, "Uma produção Lunare Team e");
 		} else {
 			al_draw_bitmap(bg, 0, 0, 0);
-			draw_scr(scores, &has_sound, &wave, new_time, mnst, blts, &score, &main_char, &current_scr, select, nick, fps, spritesheet, bullet, window, font, small_font, has_event, event_queue, event_obj, bg, shot_sound, &close_window);
+			draw_scr(&play_button, scores, &has_sound, &wave, new_time, mnst, blts, &score, &main_char, &current_scr, select, nick, fps, spritesheet, bullet, window, font, small_font, has_event, event_queue, event_obj, bg, shot_sound, &close_window);
 		}
 		if (!has_sound) {
 			al_set_audio_stream_playing(bgm, 0);
