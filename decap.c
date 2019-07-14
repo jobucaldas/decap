@@ -1,4 +1,4 @@
-/*
+﻿/*
  *	// Trabalho final de CAP - Jogo 'DeCAP' em allegro - //
  *  ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
  *	João Victor Bueno de Caldas - 769657
@@ -73,47 +73,50 @@ rgp* add_score(char name[], int score) {
 		for (i = 0; i < n - 1; i++) {
 			fscanf(fp, "%s %d\n", &a[i].name, &a[i].pontos);
 		}
-		for (p = 0; p < 2; p++) {
-			for (i = n - 2; i >= 0; i--) {
-				if (strcmp(a[i].name, name) == 0 && a[i].pontos >= score && strcmp(a[i].name, "NON") != 0) {
-					igual = 2;
-				}
-				else if (strcmp(a[i].name, name) == 0 && strcmp(a[i].name, "NON") != 0) {
-					igual = 1;
-					indice = i;
-				}
-				if (a != NULL && p == 1 && i > 0 && igual != 2) {
-                    //delete a[i].name and a[i].pontos if a[i].name == name and score>a[i].pontos
-					if (igual == 1 && i - 2 >= indice && i >= 2) {
-						a[i - 2].pontos = a[i - 1].pontos;
-						strcpy(a[i - 2].name, a[i - 1].name);
-						a[n - 1].pontos = 0;
-						strcpy(a[n - 1].name, "NON");
-					}
-                    //copy lines with pontos<score to down
-					if (a[i - 1].pontos < score) {
-						a[i].pontos = a[i - 1].pontos;
-						strncpy(a[i].name, a[i - 1].name, 3);
-						if (i == 1) {
-							strcpy(a[0].name, name);
-							a[0].pontos = score;
-						}
 
-					}
-                    //set name and score position
-					else if (a[i - 1].pontos >= score && a[i].pontos < score) {
-						a[i].pontos = score;
-						strcpy(a[i].name, name);
-					}
-					// if score == 0, set name to last position
-					else if (i == n - 2 && score <= a[i].pontos) {
-						a[i + 1].pontos = score;
-						strcpy(a[i + 1].name, name);
-						bug = 0;
-					}
-				}
-			}
-		}
+        for (i = 0; i <=n-2; i++) {
+            if (strcmp(a[i].name, name) == 0 && a[i].pontos >= score ) {
+                igual = 2;
+            }
+            else if (strcmp(a[i].name, name) == 0 && igual==0 ) {
+                igual = 1;
+                indice = i;
+            }
+        }
+        for (i = 0; i < n - 1; i++) {
+            if (igual == 1 && i >= indice ) {
+                        a[i ].pontos = a[i+1].pontos;
+                        strcpy(a[i].name, a[i+1 ].name);
+
+                        a[n - 1].pontos = 0;
+                        strcpy(a[n - 1].name, "NON");
+            }
+        }
+
+        for (i = n-2; i >0; i--) {
+            if ( igual != 2) {
+                if (a[i - 1].pontos < score) {
+                    a[i].pontos = a[i - 1].pontos;
+                    strncpy(a[i].name, a[i - 1].name, 3);
+                    if (i == 1) {
+                        strcpy(a[0].name, name);
+                        a[0].pontos = score;
+                    }
+
+                }
+                //set name and score position
+                else if (a[i - 1].pontos >= score && a[i].pontos < score) {
+                    a[i].pontos = score;
+                    strcpy(a[i].name, name);
+                }
+                // if score == 0, set name to last position
+                else if (i == n - 2 && score <= a[i].pontos) {
+                    a[i + 1].pontos = score;
+                    strcpy(a[i + 1].name, name);
+                    bug = 0;
+                }
+            }
+        }
 		fclose(fp);
 		fp = fopen("data.txt", "w");
 		//rewrite file
@@ -922,7 +925,7 @@ void draw_name(int* current_scr, int* select, char* nick, ALLEGRO_FONT* font, in
 	if (event_obj.type == ALLEGRO_EVENT_KEY_DOWN) {
 		int plus = 0;
 		char buffer = read_keyboard_down(event_obj);
-		if (*select < 3&& buffer != '\n') {
+		if (*select < 3&& buffer != '\n'&& buffer != '\0') {
 			nick[*select] = buffer;
 			plus = 1;
 		}
@@ -933,7 +936,7 @@ void draw_name(int* current_scr, int* select, char* nick, ALLEGRO_FONT* font, in
             if(*select<0)
                 *select=0;
 		}
-		else if (buffer == '\n'&& *select==3) {
+		else if (buffer == '\n'&& *select==3 && strcmp(nick,"NON")!=0) {
 			*select = 0;
 			*(select+1) = 0;
 			nick[3] = '\0';
@@ -944,7 +947,7 @@ void draw_name(int* current_scr, int* select, char* nick, ALLEGRO_FONT* font, in
 			*select = *select + 1;
 	}
 
-	if(*select==3)
+	if(*select==3 && strcmp(nick,"NON")!=0)
 		al_draw_text(font, al_map_rgb(0,0,0), 400 - 120, 400, ALLEGRO_ALIGN_LEFT, "Pressione ENTER para continuar");
 }
 
