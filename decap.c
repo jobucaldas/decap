@@ -768,7 +768,7 @@ void draw_game(int* has_sound, int* score, int* wave, double time, m* mnst, b* b
 			draw_sprite(mnst[i].posx, mnst[i].posy, &main_char->cont_frames, &main_char->current_collumn, &mnst[i].current_line, &mnst[i].sheetx, &mnst[i].sheety, 96, delta, spritesheet, event_obj);
     }
 
-    if (*score+cont*100<((*wave)*100*(*wave)+100)){
+    if (*score+cont*100<=((*wave)*100*(*wave)+100)){
         if(cont==0)
             init_m(mnst);
         spawn_m(mnst,delta,time,main_char->posx, main_char->posy);
